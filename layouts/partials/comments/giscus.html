@@ -1,5 +1,8 @@
+<!-- layouts/partials/comments/giscus.html -->
+<div id="giscus"></div>
+
 <script>
-  (function () {
+  document.addEventListener('DOMContentLoaded', function () {
     const themeMapper = Theme.getThemeMapper('light', 'dark_dimmed');
     const initTheme = themeMapper[Theme.visualState];
 
@@ -9,7 +12,7 @@
       lang = lang.slice(0, 2);
     }
 
-    let giscusAttributes = {
+    const giscusAttributes = {
       src: 'https://giscus.app/client.js',
       'data-repo': '{{ .Site.Params.comments.giscus.repo }}',
       'data-repo-id': '{{ .Site.Params.comments.giscus.repo_id }}',
@@ -27,28 +30,30 @@
       async: ''
     };
 
-    let giscusNode = document.createElement('script');
+    const giscusScript = document.createElement('script');
     Object.entries(giscusAttributes).forEach(([key, value]) =>
-      giscusNode.setAttribute(key, value)
+      giscusScript.setAttribute(key, value)
     );
 
-    const $footer = document.querySelector('footer');
-    $footer.insertAdjacentElement("beforebegin", giscusNode);
+    const giscusContainer = document.getElementById('giscus');
+    if (giscusContainer) {
+      giscusContainer.appendChild(giscusScript);
+    } else {
+      console.error('⚠️ Giscus container not found');
+    }
 
-    addEventListener('message', (event) => {
+    // Handle theme changes dynamically
+    window.addEventListener('message', (event) => {
       if (event.source === window && event.data && event.data.id === Theme.ID) {
         const newTheme = themeMapper[Theme.visualState];
-
-        const message = {
-          setConfig: {
-            theme: newTheme
-          }
-        };
-
-        const giscus =
-          document.getElementsByClassName('giscus-frame')[0].contentWindow;
-        giscus.postMessage({ giscus: message }, 'https://giscus.app');
+        const frame = document.querySelector('.giscus-frame');
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage(
+            { giscus: { setConfig: { theme: newTheme } } },
+            'https://giscus.app'
+          );
+        }
       }
     });
-  })();
+  });
 </script>
